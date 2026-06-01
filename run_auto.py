@@ -36,7 +36,7 @@ def main() -> int:
 
         from src.template_mode import apply_template_format
 
-        log("\npaper-formatter v0.6（保留模板封面 + 正文选择性套格式）")
+        log("\npaper-formatter v0.7（保留模板封面 + 正文填入模板格式）")
         stats = apply_template_format(ARTICLE, TEMPLATE, OUTPUT)
 
         if stats.get("notice"):
@@ -59,7 +59,7 @@ def main() -> int:
             log(f"  - {k}: {v} 段")
 
         report = {
-            "version": "0.6",
+            "version": "0.7",
             "preserve_template_front": stats.get("preserve_template_front"),
             "template_front_preserved_paragraphs": stats.get(
                 "template_front_preserved_paragraphs"
@@ -73,6 +73,7 @@ def main() -> int:
             "format_unchanged_count": stats.get("format_unchanged_count"),
             "by_type": stats.get("by_type"),
             "template_format_library": stats.get("template_format_library"),
+            "template_style_profile": stats.get("template_style_profile"),
             "format_applied": stats.get("format_applied"),
         }
         report_path = ROOT / "output" / "template_apply_report.json"

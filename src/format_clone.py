@@ -7,17 +7,26 @@ from docx.oxml.ns import qn
 from docx.text.paragraph import Paragraph
 
 
-def find_exemplar_paragraphs(template_doc) -> dict[str, Paragraph]:
-    """在模板里找「范例段落」，用于复制真实格式（含手工设置的字体）。"""
+def _para_is_centered(para: Paragraph) -> bool:
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    align = para.alignment
+    if align is None:
+        align = para.paragraph_format.alignment
+    return align == WD_ALIGN_PARAGRAPH.CENTER
+
+
+def find_exemplar_paragraphs(template_doc, start_index: int = 0) -> dict[str, Paragraph]:
+    """在模板【正文区】里找「范例段落」，用于复制真实格式（含手工设置的字体）。"""
     exemplars: dict[str, Paragraph] = {}
 
-    for para in template_doc.paragraphs:
+    for para in template_doc.paragraphs[start_index:]:
         text = para.text.strip()
         if not text:
             continue
 
         if "heading1" not in exemplars and re.search(
-            r"^第[\d一二三四五六七八九十百]+章", text
+            r"^第\s*[\d一二三四五六七八九十百]+\s*章\s+\S", text
         ):
             exemplars["heading1"] = para
         elif "heading2" not in exemplars and re.match(r"^\d+\.\d+\s+\S", text):
@@ -32,7 +41,7 @@ def find_exemplar_paragraphs(template_doc) -> dict[str, Paragraph]:
             r"^关键词[：:]|^Keywords[：:]", text, re.I
         ):
             exemplars["keywords"] = para
-        elif "body" not in exemplars and len(text) >= 15:
+        elif "body" not in exemplars and len(text) >= 15 and not _para_is_centered(para):
             exemplars["body"] = para
 
     return exemplars
@@ -47,8 +56,9 @@ def _copy_east_asia_font(source_run, target_run) -> None:
         return
     east = rfonts.get(qn("w:eastAsia"))
     if east:
-        target_run._element.get_or_add_rPr()
-        target_run._element.rPr.rFonts.set(qn("w:eastAsia"), east)
+        tgt_rpr = target_run._element.get_or_add_rPr()
+        tgt_rfonts = tgt_rpr.get_or_add_rFonts()
+        tgt_rfonts.set(qn("w:eastAsia"), east)
 
 
 def clone_run_format(source_run, target_run) -> None:
@@ -74,6 +84,56 @@ def clone_run_format(source_run, target_run) -> None:
                 if existing is not None:
                     tgt_rpr.remove(existing)
                 tgt_rpr.append(deepcopy(child))
+
+
+LABEL_PREFIX_RE = re.compile(
+    r"^(摘\s*要\s*[：:]|Abstract\s*[：:]|关键词\s*[：:]|关键字\s*[：:]|Keywords\s*[：:]|Key\s+words\s*[：:])",
+    re.I,
+)
+
+
+def _split_label_text(text: str) -> tuple[str, str] | None:
+    match = LABEL_PREFIX_RE.match(text.strip())
+    if not match:
+        return None
+    label = match.group(1)
+    body = text.strip()[match.end() :].lstrip()
+    return label, body
+
+
+def _first_content_run_after(source: Paragraph, start_index: int):
+    for run in source.runs[start_index + 1 :]:
+        if run.text.strip():
+            return run
+    return None
+
+
+def _clone_labelled_run_format(source: Paragraph, target: Paragraph) -> bool:
+    target_parts = _split_label_text(target.text)
+    if not target_parts or len(source.runs) < 2:
+        return False
+
+    label_run = None
+    label_run_index = -1
+    for index, run in enumerate(source.runs):
+        if _split_label_text(run.text):
+            label_run = run
+            label_run_index = index
+            break
+    if label_run is None:
+        return False
+
+    body_run = _first_content_run_after(source, label_run_index)
+    if body_run is None:
+        return False
+
+    label, body = target_parts
+    target.clear()
+    new_label = target.add_run(label)
+    new_body = target.add_run(body)
+    clone_run_format(label_run, new_label)
+    clone_run_format(body_run, new_body)
+    return True
 
 
 def clone_paragraph_format(source: Paragraph, target: Paragraph) -> None:
@@ -106,7 +166,10 @@ def clone_paragraph_format(source: Paragraph, target: Paragraph) -> None:
     if not source.runs or not target.runs:
         return
 
-    src_run = source.runs[0]
+    if _clone_labelled_run_format(source, target):
+        return
+
+    src_run = next((run for run in source.runs if run.text.strip()), source.runs[0])
     for run in target.runs:
         clone_run_format(src_run, run)
 

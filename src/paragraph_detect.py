@@ -80,8 +80,8 @@ def detect_type_from_text(text: str, rules: list[Rule]) -> str:
         (
             "heading1",
             [
-                r"^第[\d一二三四五六七八九十百]+章",
-                r"^第[\d一二三四五六七八九十百]+节",
+                r"^第\s*[\d一二三四五六七八九十百]+\s*章\s+\S",
+                r"^第\s*[\d一二三四五六七八九十百]+\s*节\s+\S",
                 r"^[一二三四五六七八九十]+、\s*\S",
                 r"^绪论$",
                 r"^引言$",
@@ -100,7 +100,8 @@ def detect_type_from_text(text: str, rules: list[Rule]) -> str:
         ("heading3", [r"^\d+\.\d+\.\d+\s+\S", r"^\d+\.\d+\.\d+\.\d+\s+\S"]),
         ("heading4", [r"^\d+\.\d+\.\d+\.\d+\s+\S"]),
         ("abstract_title", [r"^摘\s*要$", r"^Abstract$"]),
-        ("keywords", [r"^关键词[：:]", r"^Keywords[：:]", r"^关键字[：:]"]),
+        ("abstract_body", [r"^摘\s*要\s*[：:]", r"^Abstract\s*[：:]"]),
+        ("keywords", [r"^关键词[：:]", r"^Keywords[：:]", r"^Key\s+words[：:]", r"^关键字[：:]"]),
         ("references_title", [r"^参考文献$", r"^References$"]),
         ("acknowledgment", [r"^致\s*谢$"]),
         ("appendix_title", [r"^附\s*录"]),

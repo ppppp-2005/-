@@ -59,8 +59,8 @@ styles:
 rules:
   - type: heading1
     patterns:
-      - "^第[一二三四五六七八九十百]+章"
-      - "^第\\d+章"
+      - "^第\\s*[一二三四五六七八九十百]+\\s*章\\s+\\S"
+      - "^第\\s*\\d+\\s*章\\s+\\S"
       - "^[1-9]\\s+绪论"
       - "^绪论$"
       - "^引言$"
@@ -89,6 +89,7 @@ rules:
     patterns:
       - "^关键词[：:]"
       - "^Keywords[：:]"
+      - "^Key\\s+words[：:]"
 
   - type: references_title
     patterns:
@@ -99,8 +100,13 @@ rules:
     patterns:
       - "^致\\s*谢$"
 
-# 封面/前置页：保留模板中「摘要或第1章」之前的内容（封面、声明等）
+# 封面/前置页设置
 front_matter:
-  preserve_from_template: true
+  # 封面来源：
+  #   template = 以模板为基底，保留模板封面/前置页，正文换成你的并套模板格式（推荐）
+  #   article  = 保留你自己论文的封面/声明页，只对正文套模板格式
+  #   none     = 不要封面，输出直接从摘要/第1章开始
+  cover_source: template
+  # 正文起点：在此之前的段落视为封面/声明等前置页，原样保留
   # abstract_or_chapter | abstract | chapter
   body_start_at: abstract_or_chapter

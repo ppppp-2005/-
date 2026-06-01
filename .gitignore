@@ -1,4 +1,8 @@
 .venv/
 __pycache__/
 output/
+verify_output/
+_ref_word_chat/
+_ref_docxcompose/
 *.pyc
+~$*.docx

@@ -64,7 +64,7 @@ def main() -> None:
         print(f"输出: {args.output}")
         return
 
-    print("paper-formatter v0.6（保留模板封面 + 正文选择性套格式）")
+    print("paper-formatter v0.7（保留模板封面 + 正文填入模板格式）")
     print("规则: 保留模板封面/前置页；正文来自你的文章；有模板格式才改")
     stats = apply_template_format(article, template, args.output, args.config)
 
@@ -107,7 +107,7 @@ def main() -> None:
     with report_path.open("w", encoding="utf-8") as f:
         json.dump(
             {
-                "version": "0.6",
+                "version": "0.7",
                 "preserve_template_front": stats.get("preserve_template_front"),
                 "template_front_preserved_paragraphs": stats.get(
                     "template_front_preserved_paragraphs"
@@ -121,6 +121,8 @@ def main() -> None:
                 "format_unchanged_count": stats.get("format_unchanged_count"),
                 "by_type": stats["by_type"],
                 "template_format_library": stats.get("template_format_library"),
+                "template_style_profile": stats.get("template_style_profile"),
+                "abstract_page_preface": stats.get("abstract_page_preface"),
                 "format_applied": stats.get("format_applied"),
             },
             f,
